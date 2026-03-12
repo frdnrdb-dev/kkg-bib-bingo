@@ -1,2 +1,0 @@
-# kkg-bib-bingo
-bingo

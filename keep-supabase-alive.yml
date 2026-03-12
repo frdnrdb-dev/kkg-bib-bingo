@@ -1,0 +1,30 @@
+name: Keep Supabase Alive
+
+# Add these as GitHub Secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL      → your Supabase project URL
+#   SUPABASE_ANON_KEY → your Supabase anon/public key
+
+on:
+  schedule:
+    # Run every 5 days at 08:00 UTC (well within the 7-day inactivity window)
+    - cron: '0 8 */5 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "Supabase responded with status: $response"
+          if [ "$response" -ge 400 ]; then
+            echo "::warning::Supabase returned $response — project may be paused"
+            exit 1
+          fi
